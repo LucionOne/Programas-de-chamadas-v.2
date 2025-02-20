@@ -44,6 +44,13 @@ class Database:
         with open(DATABASE_PATH, 'w') as f:
             j.dump(self.data, f, indent=4)
 
+    def fechar_chamado(self, id:int):
+        if str(id) not in self.data:
+            return False
+        self.data[f"{id}"]['status'] = False
+        with open(DATABASE_PATH, 'w') as f:
+            j.dump(self.data, f, indent=4)
+
     def get_id(self):
         self.base_id = self.data.get("id_numbers", 0)
         self.next_id = self.base_id + 1
@@ -78,7 +85,7 @@ class Database:
         with open(DATABASE_PATH, 'w') as f:
             j.dump(self.data, f, indent=4)
     
-    def get_estatisticas(self):
+    def get_estatisticas(self) -> dict:
         total_chamados = len([chamado for chamado_id, chamado in self.data.items() if chamado_id not in self.metadata])
         finalizados = len([chamado for chamado_id, chamado in self.data.items() if chamado_id not in self.metadata and not chamado.get('status', True)])
         por_prioridade = {
@@ -97,7 +104,7 @@ class Database:
         reversed_data = {k: v for k, v in reversed(self.data.items())}
         return reversed_data
     
-    def clear_database(self):
+    def clear_database(self): # !!!! CUIDADO !!!!
         with open(DATABASE_PATH, 'w') as f:
             j.dump({"id_numbers": 0}, f)
     
@@ -186,6 +193,22 @@ class Menu:
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+def fechar_chamado_main(db:Database, id:int=None, precisa_id:bool=True):
+    while True:
+        if precisa_id:
+            id = input('Digite o ID do chamado para fechar\nOu Enter para con: ')
+            exist = db.fechar_chamado(id)
+            if not exist:
+                print('ID não encontrado...')
+                if input('Tentar novamente? y/n: ') == 'n':
+                    break
+        else:
+            deseja_fechar = input('fechar o chamado? y/n: ')
+            if deseja_fechar == 'y':
+                db.fechar_chamado(id)
+                print('Chamado fechado')
+            break
+
 
 def main():
     while True:
@@ -226,6 +249,7 @@ def main():
                 print("Chamado não encontrado.")
             else:
                 print(m.format_chamado(chamado))
+                fechar_chamado_main(db, id, precisa_id=False)
             input("Pressione qualquer tecla para continuar...")
 
         elif option == '3': #Buscar chamado por descrição
@@ -272,24 +296,35 @@ def main():
             
         elif option == '6': #Exibir estatísticas
             estatisticas = db.get_estatisticas()
-            
-            
-            
-            
             print(m.format_estatisticas(estatisticas))
             input("Pressione qualquer tecla para continuar...")
             
         elif option == '7': #Limpar chamados fechados
-            pass
-        
-        elif option == '7': #Limpar chamados fechados
-            pass
+            confirmacao = input('confirme y/n: ')
+            if confirmacao == 'y':
+                db.clean_finished_chamados()
+                print('Chamados fechados removidos')
+            else:
+                print('Operação cancelada')
+            input("Pressione qualquer tecla para continuar...")
 
         elif option == '8': #Reverter lista de chamados
-            pass
+            confirmacao = input('confirme y/n: ')
+            if confirmacao == 'y':
+                db.inverted_database()
+                print('Chamados revertidos')
+            else:
+                print('Operação cancelada')
+            input("Pressione qualquer tecla para continuar...")
 
         elif option == '9': #Limpar lista de chamados
-            pass
+            confirmacao = input('Para continuar digite exatamente "deletar base de dados": ')
+            if confirmacao == 'deletar base de dados':
+                db.clear_database()
+                print('Chamados removidos')
+            else:
+                print('Operação cancelada')
+            input("Pressione qualquer tecla para continuar...")
 
         elif option == '0': #Sair
             break
@@ -298,30 +333,7 @@ def main():
             print("Opção inválida")
             input("Pressione qualquer tecla para continuar...")
 
-
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
     main()
 
-# Crie um sistema de chamados, o sistema deverá permitir:
-
-# Cadastrar novos chamados
-# Buscar chamados por ID ou descrição
-# Remover chamados finalizados
-# Listar chamados em ordem de prioridade
-# Exibir estatísticas sobre os chamados
-# Reverter e limpar a lista de chamados 
-# Projeto deve ser inserido no Github, listado como público. 
-
-
-
-
-
+# End of main.py
