@@ -57,7 +57,7 @@ class Database:
             print(f"An error occurred while loading the database: {e}")
             self.data = {"id_numbers": 0}
             
-        self.metadata = ["id_numbers"]
+        self.metadata = ["id_numbers","estatisticas"]
         
     def write_chamado_to_database(self, chamado:dict):
         
@@ -69,7 +69,6 @@ class Database:
             j.dump(self.data, f, indent=4)
 
     def get_id(self):
-        
         self.base_id = self.data.get("id_numbers", 0)
         self.next_id = self.base_id + 1
     
@@ -83,22 +82,46 @@ class Database:
                 result.append(chamado_id)
         return result
 
-    def clean_finished_chamados(self):
-        for chamado_id, chamado in self.data.items():
-            if not chamado_id in self.metadata and not chamado.get('status', True):
-                self.data.pop(chamado_id)
-        with open(DATABASE_PATH, 'w') as f:
-            j.dump(self.data, f, indent=4)
-
-    def list_chamados_by_priority(self):
+    def list_chamados_by_priority(self, reverse=False) -> list:
         result = []
         priority_order = {'high': 1, 'medium': 2, 'low': 3, 'NullPriority': 4}
         order_key = lambda x: priority_order.get(x[1], 4)
         for chamado_id, chamado in self.data.items():
             if not chamado_id in self.metadata:
                 result.append((chamado_id, chamado.get('prioridade', 'NullPriority')))
-        sorted_result = sorted(result, key=order_key)
+        sorted_result = sorted(result, key=order_key, reverse=reverse)
         return [chamado_id for chamado_id, _ in sorted_result]
+
+    def clean_finished_chamados(self):
+        for chamado_id, chamado in self.data.items():
+            if not chamado_id in self.metadata and not chamado.get('status', True):
+                self.data.pop(chamado_id)
+        with open(DATABASE_PATH, 'w') as f:
+            j.dump(self.data, f, indent=4)
+    
+    def get_estatisticas(self):
+        total_chamados = len([chamado for chamado_id, chamado in self.data.items() if chamado_id not in self.metadata])
+        finalizados = len([chamado for chamado_id, chamado in self.data.items() if chamado_id not in self.metadata and not chamado.get('status', True)])
+        por_prioridade = {
+            'high': len([chamado for chamado_id, chamado in self.data.items() if chamado_id not in self.metadata and chamado.get('prioridade') == 'high']),
+            'medium': len([chamado for chamado_id, chamado in self.data.items() if chamado_id not in self.metadata and chamado.get('prioridade') == 'medium']),
+            'low': len([chamado for chamado_id, chamado in self.data.items() if chamado_id not in self.metadata and chamado.get('prioridade') == 'low']),
+            'NullPriority': len([chamado for chamado_id, chamado in self.data.items() if chamado_id not in self.metadata and chamado.get('prioridade') == 'NullPriority'])
+        }
+        return {
+            'total_chamados': total_chamados,
+            'finalizados': finalizados,
+            'por_prioridade': por_prioridade
+        }
+    
+    def inverted_database(self):
+        reversed_data = {k: v for k, v in reversed(self.data.items())}
+        return reversed_data
+    
+    def clear_database(self):
+        with open(DATABASE_PATH, 'w') as f:
+            j.dump({"id_numbers": 0}, f)
+    
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
