@@ -21,6 +21,7 @@ class Chamado:
 
 class Database:
     def __init__(self):    
+        os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
         if not os.path.exists(DATABASE_PATH):
             with open(DATABASE_PATH, 'w') as f:
                 j.dump({"id_numbers": 0}, f)
