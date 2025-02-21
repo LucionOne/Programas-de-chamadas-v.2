@@ -79,9 +79,12 @@ class Database:
         return [chamado_id for chamado_id, _ in sorted_result]
 
     def clean_finished_chamados(self):
+        to_remove = []
         for chamado_id, chamado in self.data.items():
             if not chamado_id in self.metadata and not chamado.get('status', True):
-                self.data.pop(chamado_id)
+                to_remove.append(chamado_id)
+        for chamado_id in to_remove:
+            self.data.pop(chamado_id)
         with open(DATABASE_PATH, 'w') as f:
             j.dump(self.data, f, indent=4)
     
@@ -102,7 +105,8 @@ class Database:
     
     def inverted_database(self):
         reversed_data = {k: v for k, v in reversed(self.data.items())}
-        return reversed_data
+        with open(DATABASE_PATH, 'w') as f:
+            j.dump(reversed_data, f, indent=4)
     
     def clear_database(self): # !!!! CUIDADO !!!!
         with open(DATABASE_PATH, 'w') as f:
@@ -121,8 +125,8 @@ class Menu:
 4 - listar chamadas                 |
 5 - Listar chamados por prioridade  |
 6 - Exibir estatísticas             |
-8 - Limpar chamadas fechadas        |
-7 - Reverter lista de chamados      |
+7 - Limpar chamadas fechadas        |
+8 - Reverter lista de chamados      |
 9 - Limpar lista de chamados        |
 =====================================
 0 - Sair'''
@@ -196,7 +200,7 @@ def clear():
 def fechar_chamado_main(db:Database, id:int=None, precisa_id:bool=True):
     while True:
         if precisa_id:
-            id = input('Digite o ID do chamado para fechar\nOu Enter para con: ')
+            id = input('Digite o ID do chamado para fechar: ')
             exist = db.fechar_chamado(id)
             if not exist:
                 print('ID não encontrado...')
